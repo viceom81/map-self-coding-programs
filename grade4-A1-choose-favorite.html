@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내가 좋아하는 것 고르기</title>
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #EEF2FF;
+      --accent: #10B981;
+      --bg: #F8FAFC;
+      --card-bg: #FFFFFF;
+      --text: #1E293B;
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .header {
+      width: 100%;
+      max-width: 960px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 16px;
+      background: #E2E8F0;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 14.2%;
+      background: linear-gradient(90deg, #6366F1, #4F46E5);
+      transition: width 0.3s ease;
+    }
+    .title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin: 12px 0 6px 0;
+    }
+    .subtitle {
+      font-size: 1.25rem;
+      color: #64748B;
+      font-weight: 600;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      width: 100%;
+      max-width: 960px;
+      flex: 1;
+    }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 3.5px solid #E2E8F0;
+      border-radius: 24px;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+      min-height: 160px;
+    }
+    .card:active { transform: scale(0.96); }
+    .card.selected {
+      border-color: var(--primary);
+      background-color: var(--primary-light);
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.25);
+    }
+    .card-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+    .card-icon-wrapper svg {
+      width: 100%;
+      height: 100%;
+    }
+    .card-label {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #1E293B;
+      margin-top: 4px;
+    }
+    .footer {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+      gap: 16px;
+    }
+    .btn {
+      padding: 18px 40px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.2s;
+    }
+    .btn-prev {
+      background: #E2E8F0;
+      color: #475569;
+    }
+    .btn-next {
+      background: var(--primary);
+      color: white;
+      flex: 1;
+      box-shadow: 0 6px 12px rgba(79, 70, 229, 0.25);
+    }
+    .btn-next:disabled {
+      background: #CBD5E1;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    /* 최종 요약 화면 */
+    .summary-container {
+      width: 100%;
+      max-width: 960px;
+      background: white;
+      border-radius: 28px;
+      padding: 36px 30px;
+      box-shadow: 0 10px 20px -3px rgba(0,0,0,0.08);
+    }
+    .summary-row {
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 2px dashed #E2E8F0;
+    }
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+    .summary-cat-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .summary-chip {
+      background: var(--primary-light);
+      border: 2px solid var(--primary);
+      border-radius: 16px;
+      padding: 8px 16px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-chip svg {
+      width: 30px;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="progress-bar-container">
+      <div id="progressBar" class="progress-bar"></div>
+    </div>
+    <h1 id="categoryTitle" class="title">과일</h1>
+    <div id="instruction" class="subtitle">좋아하는 것을 터치해서 골라보세요! (여러 개 선택 가능)</div>
+  </div>
+
+  <div id="cardGrid" class="grid"></div>
+
+  <!-- 최종 화면 -->
+  <div id="summaryView" class="summary-container" style="display: none;">
+    <h2 style="text-align: center; font-size: 2.2rem; margin-top: 0; color: #1E293B;">🎉 내가 좋아하는 것 모음판</h2>
+    <div id="summaryContent"></div>
+    <div style="text-align: center; margin-top: 32px;">
+      <button class="btn btn-next" onclick="restart()">처음부터 다시하기 🔄</button>
+    </div>
+  </div>
+
+  <!-- 네비게이션 버튼 -->
+  <div id="footerControls" class="footer">
+    <button id="prevBtn" class="btn btn-prev" onclick="prevStep()">이전</button>
+    <button id="nextBtn" class="btn btn-next" onclick="nextStep()" disabled>다음 ➔</button>
+  </div>
+
+  <script>
+    // 벡터 아이콘 (SVG) 정의: 요청하신 수정 사항 완벽 반영
+    const ICONS = {
+      // 과일
+      apple: `<svg viewBox="0 0 100 100"><circle cx="42" cy="55" r="32" fill="#EF4444"/><circle cx="58" cy="55" r="32" fill="#EF4444"/><ellipse cx="50" cy="80" rx="20" ry="8" fill="#DC2626"/><path d="M50 28 Q48 10 56 6" stroke="#78350F" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M52 20 Q65 10 70 22 Q58 28 52 20" fill="#22C55E"/></svg>`,
+      strawberry: `<svg viewBox="0 0 100 100"><path d="M50 88 C25 80 15 50 22 32 C28 20 72 20 78 32 C85 50 75 80 50 88 Z" fill="#F43F5E"/><path d="M50 28 Q30 18 25 24 Q40 28 45 32 Q50 15 50 12 Q50 15 55 32 Q60 28 75 24 Q70 18 50 28" fill="#15803D"/><circle cx="40" cy="45" r="2.5" fill="#FEF08A"/><circle cx="60" cy="45" r="2.5" fill="#FEF08A"/><circle cx="50" cy="60" r="2.5" fill="#FEF08A"/><circle cx="35" cy="68" r="2.5" fill="#FEF08A"/><circle cx="65" cy="68" r="2.5" fill="#FEF08A"/></svg>`,
+      orange: `<svg viewBox="0 0 100 100"><circle cx="50" cy="52" r="38" fill="#F97316"/><circle cx="50" cy="52" r="34" fill="#FB923C"/><path d="M50 20 Q48 10 54 8" stroke="#78350F" stroke-width="4" fill="none"/><path d="M50 18 Q62 10 65 20 Q56 24 50 18" fill="#16A34A"/></svg>`,
+      banana: `<svg viewBox="0 0 100 100"><path d="M22 72 C35 78 70 75 82 32 C74 48 50 56 28 50 C24 58 20 68 22 72 Z" fill="#FACC15" stroke="#EAB308" stroke-width="2"/><circle cx="21" cy="72" r="3" fill="#78350F"/><path d="M82 32 L87 25" stroke="#78350F" stroke-width="4" stroke-linecap="round"/></svg>`,
+      melon: `<svg viewBox="0 0 100 100"><circle cx="50" cy="52" r="36" fill="#86EFAC"/><circle cx="50" cy="52" r="36" fill="none" stroke="#22C55E" stroke-width="3"/><path d="M22 45 Q50 55 78 45 M22 59 Q50 69 78 59 M35 25 Q50 50 40 85 M65 25 Q50 50 60 85" fill="none" stroke="#4ADE80" stroke-width="2.5"/><path d="M50 16 L50 8 M45 8 L55 8" stroke="#15803D" stroke-width="4" stroke-linecap="round"/></svg>`,
+      grape: `<svg viewBox="0 0 100 100"><g fill="#8B5CF6"><circle cx="42" cy="40" r="11"/><circle cx="58" cy="40" r="11"/><circle cx="34" cy="55" r="11"/><circle cx="50" cy="55" r="11"/><circle cx="66" cy="55" r="11"/><circle cx="42" cy="70" r="11"/><circle cx="58" cy="70" r="11"/><circle cx="50" cy="83" r="10"/></g><path d="M50 30 Q50 12 60 10" stroke="#78350F" stroke-width="4" fill="none"/><path d="M48 24 Q30 15 35 28 Z" fill="#16A34A"/></svg>`,
+      watermelon: `<svg viewBox="0 0 100 100"><path d="M15 45 C15 78 40 85 50 85 C60 85 85 78 85 45 Z" fill="#15803D"/><path d="M18 45 C18 74 40 81 50 81 C60 81 82 74 82 45 Z" fill="#BBF7D0"/><path d="M22 45 C22 71 42 77 50 77 C58 77 78 71 78 45 Z" fill="#EF4444"/><circle cx="38" cy="55" r="2.5" fill="#1E293B"/><circle cx="62" cy="55" r="2.5" fill="#1E293B"/><circle cx="50" cy="65" r="2.5" fill="#1E293B"/></svg>`,
+      peach: `<svg viewBox="0 0 100 100"><path d="M50 82 C22 82 14 52 24 35 C34 20 48 25 50 32 C52 25 66 20 76 35 C86 52 78 82 50 82 Z" fill="#FDA4AF"/><path d="M50 32 Q48 14 55 10" stroke="#78350F" stroke-width="4" fill="none"/><path d="M52 20 Q68 12 70 24 Z" fill="#16A34A"/></svg>`,
+
+      // 음식(식사류) - 요청 반영: 노릇한 돈까스와 볶아진 소불고기
+      bulgogi: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="60" rx="42" ry="24" fill="#CBD5E1"/><ellipse cx="50" cy="58" rx="38" ry="20" fill="#F8FAFC"/><ellipse cx="50" cy="56" rx="35" ry="18" fill="#E2E8F0"/><path d="M25 54 Q40 40 60 48 Q75 42 74 56 Q60 68 35 62 Z" fill="#78350F"/><path d="M30 50 Q50 38 65 52 Q70 60 55 64 Z" fill="#92400E"/><path d="M40 45 Q50 48 58 43" stroke="#4ADE80" stroke-width="3" stroke-linecap="round"/><path d="M32 54 Q45 56 42 60" stroke="#F97316" stroke-width="2.5" stroke-linecap="round"/><circle cx="48" cy="52" r="1.5" fill="#FEF08A"/><circle cx="56" cy="55" r="1.5" fill="#FEF08A"/><circle cx="38" cy="52" r="1.5" fill="#FEF08A"/></svg>`,
+      donkatsu: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="62" rx="44" ry="24" fill="#E2E8F0"/><ellipse cx="50" cy="60" rx="40" ry="21" fill="#FFFFFF"/><circle cx="70" cy="52" r="12" fill="#F1F5F9"/><circle cx="68" cy="51" r="10" fill="#FFFFFF"/><ellipse cx="40" cy="60" rx="26" ry="16" fill="#D97706"/><ellipse cx="40" cy="58" rx="25" ry="15" fill="#F59E0B"/><line x1="24" y1="46" x2="26" y2="69" stroke="#78350F" stroke-width="2.5"/><line x1="32" y1="44" x2="34" y2="72" stroke="#78350F" stroke-width="2.5"/><line x1="40" y1="43" x2="42" y2="73" stroke="#78350F" stroke-width="2.5"/><line x1="48" y1="44" x2="50" y2="72" stroke="#78350F" stroke-width="2.5"/><line x1="56" y1="47" x2="58" y2="68" stroke="#78350F" stroke-width="2.5"/><path d="M22 55 Q38 52 58 56" stroke="#92400E" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M25 62 Q65 42 70 42" stroke="#22C55E" stroke-width="3" fill="none"/></svg>`,
+      rice: `<svg viewBox="0 0 100 100"><path d="M20 50 C20 78 80 78 80 50 Z" fill="#94A3B8"/><path d="M22 50 C22 75 78 75 78 50 Z" fill="#CBD5E1"/><path d="M20 50 Q50 20 80 50 Z" fill="#F8FAFC"/><ellipse cx="50" cy="50" rx="30" ry="6" fill="#E2E8F0"/></svg>`,
+      kimchi: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="65" rx="38" ry="18" fill="#E2E8F0"/><path d="M28 62 C25 48 40 38 65 42 C75 52 70 68 50 70 C38 70 30 68 28 62 Z" fill="#DC2626"/><path d="M35 55 Q50 46 62 50" stroke="#EF4444" stroke-width="4" fill="none"/><path d="M32 48 Q55 35 60 45" stroke="#F87171" stroke-width="3" fill="none"/><circle cx="45" cy="52" r="1.5" fill="#FEF08A"/><circle cx="55" cy="58" r="1.5" fill="#FEF08A"/></svg>`,
+      fish: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="65" rx="42" ry="18" fill="#E2E8F0"/><path d="M22 52 C35 38 65 38 78 52 C65 66 35 66 22 52 Z" fill="#D97706"/><path d="M78 52 L90 40 L90 64 Z" fill="#B45309"/><circle cx="32" cy="50" r="3" fill="#1E293B"/><line x1="45" y1="46" x2="48" y2="58" stroke="#78350F" stroke-width="3" stroke-linecap="round"/><line x1="56" y1="46" x2="59" y2="58" stroke="#78350F" stroke-width="3" stroke-linecap="round"/></svg>`,
+      sausage: `<svg viewBox="0 0 100 100"><rect x="25" y="42" width="50" height="22" rx="11" fill="#E11D48" transform="rotate(-15 50 50)"/><line x1="40" y1="42" x2="42" y2="54" stroke="#BE123C" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="45" x2="52" y2="57" stroke="#BE123C" stroke-width="3" stroke-linecap="round"/><line x1="60" y1="48" x2="62" y2="60" stroke="#BE123C" stroke-width="3" stroke-linecap="round"/></svg>`,
+      pizza: `<svg viewBox="0 0 100 100"><path d="M50 20 L82 75 C70 82 30 82 18 75 Z" fill="#F59E0B"/><path d="M50 24 L78 72 C68 78 32 78 22 72 Z" fill="#FCD34D"/><circle cx="45" cy="45" r="5" fill="#DC2626"/><circle cx="58" cy="60" r="5" fill="#DC2626"/><circle cx="38" cy="65" r="5" fill="#DC2626"/><circle cx="50" cy="58" r="3" fill="#15803D"/></svg>`,
+      jajang: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="65" rx="40" ry="18" fill="#CBD5E1"/><path d="M20 50 C20 75 80 75 80 50 Z" fill="#F8FAFC"/><ellipse cx="50" cy="48" rx="30" ry="14" fill="#1E293B"/><ellipse cx="50" cy="46" rx="26" ry="12" fill="#334155"/><line x1="42" y1="44" x2="58" y2="48" stroke="#22C55E" stroke-width="3" stroke-linecap="round"/></svg>`,
+
+      // 과자 & 간식 - 요청 반영: 감자칩 봉지, 하리보 곰돌이 젤리, 빼빼로
+      potatochip: `<svg viewBox="0 0 100 100"><path d="M28 22 L72 22 L68 78 L32 78 Z" fill="#3B82F6"/><path d="M28 22 Q50 30 72 22" fill="#2563EB"/><path d="M32 78 Q50 70 68 78" fill="#2563EB"/><rect x="34" y="42" width="32" height="18" rx="4" fill="#FEF08A"/><text x="50" y="55" font-size="9" font-weight="900" fill="#1E3A8A" text-anchor="middle">감자칩</text><ellipse cx="50" cy="67" rx="10" ry="5" fill="#FACC15"/></svg>`,
+      gummybear: `<svg viewBox="0 0 100 100"><g fill="#EF4444"><circle cx="35" cy="26" r="8"/><circle cx="65" cy="26" r="8"/><rect x="32" y="28" width="36" height="30" rx="15"/><rect x="30" y="50" width="40" height="34" rx="14"/><rect x="22" y="44" width="14" height="20" rx="7"/><rect x="64" y="44" width="14" height="20" rx="7"/><circle cx="38" cy="85" r="9"/><circle cx="62" cy="85" r="9"/><circle cx="43" cy="38" r="2.5" fill="#991B1B"/><circle cx="57" cy="38" r="2.5" fill="#991B1B"/><ellipse cx="50" cy="45" rx="4" ry="2.5" fill="#991B1B"/></g></svg>`,
+      pepero: `<svg viewBox="0 0 100 100"><rect x="22" y="24" width="56" height="60" rx="4" fill="#DC2626"/><text x="50" y="48" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">빼빼로</text><line x1="36" y1="12" x2="36" y2="40" stroke="#78350F" stroke-width="4.5" stroke-linecap="round"/><line x1="46" y1="8" x2="46" y2="35" stroke="#78350F" stroke-width="4.5" stroke-linecap="round"/><line x1="56" y1="14" x2="56" y2="40" stroke="#78350F" stroke-width="4.5" stroke-linecap="round"/><line x1="36" y1="28" x2="36" y2="40" stroke="#FDE047" stroke-width="4.5"/><line x1="46" y1="24" x2="46" y2="35" stroke="#FDE047" stroke-width="4.5"/><line x1="56" y1="30" x2="56" y2="40" stroke="#FDE047" stroke-width="4.5"/></svg>`,
+      chocolate: `<svg viewBox="0 0 100 100"><rect x="26" y="26" width="48" height="52" rx="6" fill="#78350F"/><rect x="30" y="30" width="18" height="14" rx="2" fill="#92400E"/><rect x="52" y="30" width="18" height="14" rx="2" fill="#92400E"/><rect x="30" y="48" width="18" height="14" rx="2" fill="#92400E"/><rect x="52" y="48" width="18" height="14" rx="2" fill="#92400E"/></svg>`,
+      icecream: `<svg viewBox="0 0 100 100"><path d="M35 55 L50 88 L65 55 Z" fill="#D97706"/><circle cx="50" cy="45" r="22" fill="#F43F5E"/><circle cx="42" cy="38" r="4" fill="#FDA4AF"/><circle cx="50" cy="22" r="6" fill="#DC2626"/></svg>`,
+      biscuit: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#F59E0B"/><circle cx="50" cy="50" r="32" fill="none" stroke="#D97706" stroke-width="3" stroke-dasharray="4,4"/><circle cx="40" cy="40" r="3" fill="#92400E"/><circle cx="60" cy="40" r="3" fill="#92400E"/><circle cx="50" cy="50" r="3" fill="#92400E"/><circle cx="40" cy="60" r="3" fill="#92400E"/><circle cx="60" cy="60" r="3" fill="#92400E"/></svg>`,
+      popcorn: `<svg viewBox="0 0 100 100"><path d="M30 45 L36 85 L64 85 L70 45 Z" fill="#EF4444"/><line x1="42" y1="45" x2="44" y2="85" stroke="#FFFFFF" stroke-width="5"/><line x1="56" y1="45" x2="54" y2="85" stroke="#FFFFFF" stroke-width="5"/><circle cx="42" cy="40" r="10" fill="#FEF08A"/><circle cx="58" cy="40" r="10" fill="#FEF08A"/><circle cx="50" cy="32" r="11" fill="#FEF9C3"/></svg>`,
+      donut: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#D97706"/><circle cx="50" cy="50" r="28" fill="#EC4899"/><circle cx="50" cy="50" r="12" fill="#F8FAFC"/><circle cx="42" cy="32" r="2" fill="#FACC15"/><circle cx="60" cy="36" r="2" fill="#60A5FA"/><circle cx="58" cy="62" r="2" fill="#4ADE80"/></svg>`,
+
+      // 활동 & 놀이 - 요청 반영: 놀이터 그네 그림
+      swing: `<svg viewBox="0 0 100 100"><line x1="20" y1="20" x2="80" y2="20" stroke="#475569" stroke-width="6" stroke-linecap="round"/><line x1="25" y1="20" x2="12" y2="88" stroke="#0284C7" stroke-width="4.5" stroke-linecap="round"/><line x1="75" y1="20" x2="88" y2="88" stroke="#0284C7" stroke-width="4.5" stroke-linecap="round"/><line x1="38" y1="20" x2="38" y2="65" stroke="#64748B" stroke-width="2.5"/><line x1="62" y1="20" x2="62" y2="65" stroke="#64748B" stroke-width="2.5"/><rect x="32" y="65" width="36" height="8" rx="3" fill="#D97706"/><rect x="30" y="67" width="40" height="4" rx="2" fill="#B45309"/></svg>`,
+      trampoline: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="42" ry="16" fill="#3B82F6"/><ellipse cx="50" cy="50" rx="36" ry="12" fill="#1E293B"/><line x1="22" y1="55" x2="16" y2="82" stroke="#64748B" stroke-width="5" stroke-linecap="round"/><line x1="42" y1="60" x2="42" y2="85" stroke="#64748B" stroke-width="5" stroke-linecap="round"/><line x1="58" y1="60" x2="58" y2="85" stroke="#64748B" stroke-width="5" stroke-linecap="round"/><line x1="78" y1="55" x2="84" y2="82" stroke="#64748B" stroke-width="5" stroke-linecap="round"/></svg>`,
+      kickboard: `<svg viewBox="0 0 100 100"><line x1="68" y1="20" x2="68" y2="70" stroke="#64748B" stroke-width="5" stroke-linecap="round"/><line x1="56" y1="20" x2="80" y2="20" stroke="#0284C7" stroke-width="6" stroke-linecap="round"/><path d="M68 70 L28 75" stroke="#EF4444" stroke-width="6" stroke-linecap="round"/><circle cx="28" cy="78" r="9" fill="#1E293B"/><circle cx="28" cy="78" r="4" fill="#94A3B8"/><circle cx="68" cy="78" r="9" fill="#1E293B"/><circle cx="68" cy="78" r="4" fill="#94A3B8"/></svg>`,
+      ball: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="32" fill="#FFFFFF" stroke="#1E293B" stroke-width="3"/><polygon points="50,34 62,44 58,58 42,58 38,44" fill="#1E293B"/></svg>`,
+      running: `<svg viewBox="0 0 100 100"><circle cx="60" cy="24" r="8" fill="#F59E0B"/><path d="M54 34 L46 52 L60 62 L66 82" stroke="#3B82F6" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M46 52 L30 60 L22 75" stroke="#3B82F6" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M42 42 L55 42 L68 36" stroke="#10B981" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`,
+      slide: `<svg viewBox="0 0 100 100"><path d="M22 25 L22 85 M30 25 L30 85" stroke="#64748B" stroke-width="4" stroke-linecap="round"/><line x1="22" y1="40" x2="30" y2="40" stroke="#64748B" stroke-width="3"/><line x1="22" y1="55" x2="30" y2="55" stroke="#64748B" stroke-width="3"/><line x1="22" y1="70" x2="30" y2="70" stroke="#64748B" stroke-width="3"/><path d="M26 30 Q45 35 60 65 L82 82" stroke="#F59E0B" stroke-width="7" fill="none" stroke-linecap="round"/></svg>`,
+      block: `<svg viewBox="0 0 100 100"><rect x="22" y="52" width="26" height="26" rx="3" fill="#EF4444"/><rect x="52" y="52" width="26" height="26" rx="3" fill="#3B82F6"/><polygon points="22,48 48,22 74,48" fill="#FACC15"/></svg>`,
+      drawing: `<svg viewBox="0 0 100 100"><path d="M25 45 C20 70 50 85 70 70 C80 60 75 40 60 35 C40 30 30 35 25 45 Z" fill="#FDE047"/><circle cx="38" cy="46" r="4" fill="#EF4444"/><circle cx="48" cy="62" r="4" fill="#3B82F6"/><circle cx="62" cy="50" r="4" fill="#10B981"/><rect x="55" y="16" width="8" height="34" rx="2" fill="#8B5CF6" transform="rotate(35 55 16)"/></svg>`,
+
+      // 동물
+      dog: `<svg viewBox="0 0 100 100"><path d="M24 35 C20 45 22 65 30 65 C34 65 36 50 36 40 Z" fill="#B45309"/><path d="M76 35 C80 45 78 65 70 65 C66 65 64 50 64 40 Z" fill="#B45309"/><circle cx="50" cy="52" r="26" fill="#F59E0B"/><circle cx="42" cy="48" r="3.5" fill="#1E293B"/><circle cx="58" cy="48" r="3.5" fill="#1E293B"/><ellipse cx="50" cy="58" rx="6" ry="4" fill="#1E293B"/><path d="M47 62 Q50 66 53 62" stroke="#1E293B" stroke-width="2" fill="none"/></svg>`,
+      cat: `<svg viewBox="0 0 100 100"><polygon points="30,45 25,25 45,35" fill="#F97316"/><polygon points="70,45 75,25 55,35" fill="#F97316"/><circle cx="50" cy="54" r="25" fill="#FB923C"/><circle cx="40" cy="50" r="3.5" fill="#1E293B"/><circle cx="60" cy="50" r="3.5" fill="#1E293B"/><polygon points="48,58 52,58 50,60" fill="#EF4444"/><line x1="30" y1="56" x2="20" y2="54" stroke="#1E293B" stroke-width="2"/><line x1="70" y1="56" x2="80" y2="54" stroke="#1E293B" stroke-width="2"/></svg>`,
+      elephant: `<svg viewBox="0 0 100 100"><circle cx="30" cy="48" r="18" fill="#94A3B8"/><circle cx="70" cy="48" r="18" fill="#94A3B8"/><circle cx="50" cy="50" r="26" fill="#CBD5E1"/><circle cx="40" cy="45" r="3" fill="#1E293B"/><circle cx="60" cy="45" r="3" fill="#1E293B"/><path d="M46 54 C46 68 56 75 58 68" stroke="#94A3B8" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+      monkey: `<svg viewBox="0 0 100 100"><circle cx="28" cy="50" r="10" fill="#78350F"/><circle cx="72" cy="50" r="10" fill="#78350F"/><circle cx="50" cy="50" r="26" fill="#92400E"/><ellipse cx="50" cy="54" rx="18" ry="14" fill="#FDE68A"/><circle cx="43" cy="48" r="3" fill="#1E293B"/><circle cx="57" cy="48" r="3" fill="#1E293B"/><ellipse cx="50" cy="58" rx="4" ry="2" fill="#78350F"/></svg>`,
+      fox: `<svg viewBox="0 0 100 100"><polygon points="25,50 18,18 45,35" fill="#EA580C"/><polygon points="75,50 82,18 55,35" fill="#EA580C"/><polygon points="22,45 22,25 38,36" fill="#FED7AA"/><polygon points="78,45 78,25 62,36" fill="#FED7AA"/><circle cx="50" cy="54" r="24" fill="#EA580C"/><polygon points="35,62 50,75 65,62" fill="#FFFFFF"/><circle cx="40" cy="50" r="3" fill="#1E293B"/><circle cx="60" cy="50" r="3" fill="#1E293B"/><circle cx="50" cy="72" r="3" fill="#1E293B"/></svg>`,
+      turtle: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="28" fill="#15803D"/><circle cx="50" cy="50" r="22" fill="#22C55E"/><circle cx="50" cy="22" r="10" fill="#86EFAC"/><circle cx="46" cy="20" r="2" fill="#1E293B"/><circle cx="54" cy="20" r="2" fill="#1E293B"/><circle cx="26" cy="38" r="6" fill="#86EFAC"/><circle cx="74" cy="38" r="6" fill="#86EFAC"/><circle cx="28" cy="65" r="6" fill="#86EFAC"/><circle cx="72" cy="65" r="6" fill="#86EFAC"/></svg>`,
+      panda: `<svg viewBox="0 0 100 100"><circle cx="32" cy="32" r="10" fill="#1E293B"/><circle cx="68" cy="32" r="10" fill="#1E293B"/><circle cx="50" cy="52" r="26" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><ellipse cx="40" cy="48" rx="6" ry="8" fill="#1E293B"/><ellipse cx="60" cy="48" rx="6" ry="8" fill="#1E293B"/><circle cx="40" cy="46" r="2" fill="#FFFFFF"/><circle cx="60" cy="46" r="2" fill="#FFFFFF"/><ellipse cx="50" cy="58" rx="4" ry="2.5" fill="#1E293B"/></svg>`,
+      rabbit: `<svg viewBox="0 0 100 100"><ellipse cx="40" cy="30" rx="6" ry="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><ellipse cx="40" cy="30" rx="3" ry="12" fill="#FDA4AF"/><ellipse cx="60" cy="30" rx="6" ry="18" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><ellipse cx="60" cy="30" rx="3" ry="12" fill="#FDA4AF"/><circle cx="50" cy="56" r="24" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="42" cy="52" r="3" fill="#1E293B"/><circle cx="58" cy="52" r="3" fill="#1E293B"/><polygon points="48,60 52,60 50,62" fill="#F43F5E"/></svg>`,
+
+      // 색깔
+      red: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#EF4444"/><circle cx="40" cy="40" r="8" fill="#FCA5A5" opacity="0.6"/></svg>`,
+      orange_c: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#F97316"/><circle cx="40" cy="40" r="8" fill="#FDBA74" opacity="0.6"/></svg>`,
+      yellow: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#FACC15"/><circle cx="40" cy="40" r="8" fill="#FEF08A" opacity="0.6"/></svg>`,
+      green: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#22C55E"/><circle cx="40" cy="40" r="8" fill="#86EFAC" opacity="0.6"/></svg>`,
+      blue: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#3B82F6"/><circle cx="40" cy="40" r="8" fill="#93C5FD" opacity="0.6"/></svg>`,
+      purple: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#A855F7"/><circle cx="40" cy="40" r="8" fill="#D8B4FE" opacity="0.6"/></svg>`,
+      pink: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#EC4899"/><circle cx="40" cy="40" r="8" fill="#F472B6" opacity="0.6"/></svg>`,
+      black: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="36" fill="#1E293B"/><circle cx="40" cy="40" r="8" fill="#475569" opacity="0.6"/></svg>`,
+
+      // 사람
+      family: `<svg viewBox="0 0 100 100"><circle cx="34" cy="38" r="10" fill="#F59E0B"/><path d="M20 62 C20 50 48 50 48 62 Z" fill="#3B82F6"/><circle cx="66" cy="38" r="10" fill="#F59E0B"/><path d="M52 62 C52 50 80 50 80 62 Z" fill="#EC4899"/><circle cx="50" cy="56" r="8" fill="#F59E0B"/><path d="M38 78 C38 68 62 68 62 78 Z" fill="#10B981"/></svg>`,
+      friends: `<svg viewBox="0 0 100 100"><circle cx="36" cy="40" r="12" fill="#F59E0B"/><path d="M20 70 C20 56 52 56 52 70 Z" fill="#3B82F6"/><circle cx="64" cy="40" r="12" fill="#F59E0B"/><path d="M48 70 C48 56 80 56 80 70 Z" fill="#10B981"/></svg>`,
+      aunt: `<svg viewBox="0 0 100 100"><path d="M32 30 Q50 18 68 30 Q74 54 68 60 Q50 66 32 60 Z" fill="#92400E"/><circle cx="50" cy="45" r="15" fill="#FED7AA"/><path d="M28 82 C28 66 72 66 72 82 Z" fill="#EC4899"/><circle cx="44" cy="44" r="2.5" fill="#1E293B"/><circle cx="56" cy="44" r="2.5" fill="#1E293B"/></svg>`,
+      grandma: `<svg viewBox="0 0 100 100"><circle cx="50" cy="35" r="18" fill="#94A3B8"/><circle cx="50" cy="46" r="15" fill="#FED7AA"/><circle cx="44" cy="45" r="2.5" fill="#1E293B"/><circle cx="56" cy="45" r="2.5" fill="#1E293B"/><circle cx="44" cy="45" r="5" fill="none" stroke="#78350F" stroke-width="2"/><circle cx="56" cy="45" r="5" fill="none" stroke="#78350F" stroke-width="2"/><line x1="49" y1="45" x2="51" y2="45" stroke="#78350F" stroke-width="2"/><path d="M26 84 C26 68 74 68 74 84 Z" fill="#8B5CF6"/></svg>`,
+      grandpa: `<svg viewBox="0 0 100 100"><path d="M30 42 Q50 25 70 42" stroke="#CBD5E1" stroke-width="6" fill="none"/><circle cx="50" cy="48" r="15" fill="#FED7AA"/><circle cx="44" cy="46" r="2.5" fill="#1E293B"/><circle cx="56" cy="46" r="2.5" fill="#1E293B"/><path d="M42 56 Q50 62 58 56" stroke="#94A3B8" stroke-width="3" fill="none"/><path d="M28 84 C28 68 72 68 72 84 Z" fill="#475569"/></svg>`,
+      teacher: `<svg viewBox="0 0 100 100"><circle cx="50" cy="40" r="14" fill="#FED7AA"/><path d="M32 30 Q50 18 68 30" stroke="#78350F" stroke-width="6" fill="none"/><path d="M28 78 C28 62 72 62 72 78 Z" fill="#0284C7"/><rect x="62" y="60" width="16" height="20" rx="2" fill="#F59E0B"/><circle cx="45" cy="38" r="2.5" fill="#1E293B"/><circle cx="55" cy="38" r="2.5" fill="#1E293B"/></svg>`
+    };
+
+    const categories = [
+      {
+        id: 'fruit',
+        title: '🍎 과일',
+        items: [
+          { name: '사과', icon: ICONS.apple }, { name: '딸기', icon: ICONS.strawberry },
+          { name: '오렌지', icon: ICONS.orange }, { name: '바나나', icon: ICONS.banana },
+          { name: '멜론', icon: ICONS.melon }, { name: '포도', icon: ICONS.grape },
+          { name: '수박', icon: ICONS.watermelon }, { name: '복숭아', icon: ICONS.peach }
+        ]
+      },
+      {
+        id: 'food',
+        title: '🍱 음식 (식사류)',
+        items: [
+          { name: '소불고기', icon: ICONS.bulgogi }, { name: '돈까스', icon: ICONS.donkatsu },
+          { name: '밥', icon: ICONS.rice }, { name: '김치', icon: ICONS.kimchi },
+          { name: '생선구이', icon: ICONS.fish }, { name: '소세지', icon: ICONS.sausage },
+          { name: '피자', icon: ICONS.pizza }, { name: '자장면', icon: ICONS.jajang }
+        ]
+      },
+      {
+        id: 'snack',
+        title: '🍪 과자 & 간식',
+        items: [
+          { name: '감자칩', icon: ICONS.potatochip }, { name: '젤리', icon: ICONS.gummybear },
+          { name: '빼빼로', icon: ICONS.pepero }, { name: '초콜릿', icon: ICONS.chocolate },
+          { name: '아이스크림', icon: ICONS.icecream }, { name: '비스킷', icon: ICONS.biscuit },
+          { name: '팝콘', icon: ICONS.popcorn }, { name: '도넛', icon: ICONS.donut }
+        ]
+      },
+      {
+        id: 'activity',
+        title: '🏃 활동 & 놀이',
+        items: [
+          { name: '그네타기', icon: ICONS.swing }, { name: '트램펄린', icon: ICONS.trampoline },
+          { name: '퀵보드', icon: ICONS.kickboard }, { name: '공놀이', icon: ICONS.ball },
+          { name: '달리기', icon: ICONS.running }, { name: '미끄럼틀', icon: ICONS.slide },
+          { name: '블록놀이', icon: ICONS.block }, { name: '그림그리기', icon: ICONS.drawing }
+        ]
+      },
+      {
+        id: 'animal',
+        title: '🐾 동물',
+        items: [
+          { name: '강아지', icon: ICONS.dog }, { name: '고양이', icon: ICONS.cat },
+          { name: '코끼리', icon: ICONS.elephant }, { name: '원숭이', icon: ICONS.monkey },
+          { name: '사막여우', icon: ICONS.fox }, { name: '거북이', icon: ICONS.turtle },
+          { name: '판다', icon: ICONS.panda }, { name: '토끼', icon: ICONS.rabbit }
+        ]
+      },
+      {
+        id: 'color',
+        title: '🎨 색깔',
+        items: [
+          { name: '빨강', icon: ICONS.red }, { name: '주황', icon: ICONS.orange_c },
+          { name: '노랑', icon: ICONS.yellow }, { name: '초록', icon: ICONS.green },
+          { name: '파랑', icon: ICONS.blue }, { name: '보라', icon: ICONS.purple },
+          { name: '분홍', icon: ICONS.pink }, { name: '검정', icon: ICONS.black }
+        ]
+      },
+      {
+        id: 'people',
+        title: '👨‍👩‍👧 사람 & 가족',
+        items: [
+          { name: '가족', icon: ICONS.family }, { name: '친구', icon: ICONS.friends },
+          { name: '선생님', icon: ICONS.teacher }, { name: '이모/삼촌', icon: ICONS.aunt },
+          { name: '할머니', icon: ICONS.grandma }, { name: '할아버지', icon: ICONS.grandpa }
+        ]
+      }
+    ];
+
+    let currentStep = 0;
+    const selections = {};
+    categories.forEach(c => selections[c.id] = []);
+
+    function renderCurrentStep() {
+      const cat = categories[currentStep];
+      document.getElementById('categoryTitle').textContent = cat.title;
+      document.getElementById('progressBar').style.width = `${((currentStep + 1) / categories.length) * 100}%`;
+      
+      const grid = document.getElementById('cardGrid');
+      grid.innerHTML = '';
+
+      cat.items.forEach(item => {
+        const isSelected = selections[cat.id].some(s => s.name === item.name);
+        const card = document.createElement('div');
+        card.className = `card ${isSelected ? 'selected' : ''}`;
+        card.innerHTML = `
+          <div class="card-icon-wrapper">${item.icon}</div>
+          <div class="card-label">${item.name}</div>
+        `;
+        card.onclick = () => toggleSelection(cat.id, item);
+        grid.appendChild(card);
+      });
+
+      document.getElementById('prevBtn').style.display = currentStep === 0 ? 'none' : 'block';
+      validateNextButton();
+    }
+
+    function toggleSelection(catId, item) {
+      const index = selections[catId].findIndex(s => s.name === item.name);
+      if (index > -1) {
+        selections[catId].splice(index, 1);
+      } else {
+        selections[catId].push(item);
+      }
+      renderCurrentStep();
+    }
+
+    function validateNextButton() {
+      const cat = categories[currentStep];
+      const hasSelection = selections[cat.id].length > 0;
+      document.getElementById('nextBtn').disabled = !hasSelection;
+    }
+
+    function nextStep() {
+      if (currentStep < categories.length - 1) {
+        currentStep++;
+        renderCurrentStep();
+      } else {
+        showSummary();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        renderCurrentStep();
+      }
+    }
+
+    function showSummary() {
+      document.getElementById('cardGrid').style.display = 'none';
+      document.getElementById('footerControls').style.display = 'none';
+      document.getElementById('categoryTitle').style.display = 'none';
+      document.getElementById('instruction').style.display = 'none';
+      document.getElementById('summaryView').style.display = 'block';
+
+      const summaryContent = document.getElementById('summaryContent');
+      summaryContent.innerHTML = '';
+
+      categories.forEach(cat => {
+        const row = document.createElement('div');
+        row.className = 'summary-row';
+        const selectedItems = selections[cat.id];
+        
+        let chipsHtml = selectedItems.map(item => `
+          <span class="summary-chip">${item.icon} <span>${item.name}</span></span>
+        `).join('');
+
+        row.innerHTML = `
+          <div class="summary-cat-title">${cat.title}</div>
+          <div class="summary-items">${chipsHtml}</div>
+        `;
+        summaryContent.appendChild(row);
+      });
+    }
+
+    function restart() {
+      categories.forEach(c => selections[c.id] = []);
+      currentStep = 0;
+      document.getElementById('cardGrid').style.display = 'grid';
+      document.getElementById('footerControls').style.display = 'flex';
+      document.getElementById('categoryTitle').style.display = 'block';
+      document.getElementById('instruction').style.display = 'block';
+      document.getElementById('summaryView').style.display = 'none';
+      renderCurrentStep();
+    }
+
+    renderCurrentStep();
+  </script>
+</body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>선생님, 도와주세요!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#FFF6E9;
+    --bg2:#EAF6FF;
+    --ink:#3A3358;
+    --ink-soft:#6b6485;
+    --white:#FFFFFF;
+    --line:#E7E1F5;
+
+    --c-zip:#3AB6A8;   --c-zip-soft:#E2F7F3;
+    --c-lid:#4AA9FF;   --c-lid-soft:#E2F1FF;
+    --c-tray:#9C88FF;  --c-tray-soft:#EEEAFF;
+    --c-task:#FF9C4A;  --c-task-soft:#FFEEDD;
+
+    --good:#3CB878;
+    --good-soft:#E4F8ED;
+    --oops:#FF6E6E;
+    --accent:#FF8552;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Noto Sans KR', sans-serif;
+    background:
+      radial-gradient(circle at 8% 12%, var(--bg2) 0%, transparent 45%),
+      radial-gradient(circle at 92% 85%, var(--bg2) 0%, transparent 40%),
+      var(--bg1);
+    color:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
+  .stage{
+    max-width:1180px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding: 18px 22px 34px;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:center; gap:14px; padding:8px 6px 20px; }
+  .home-btn{
+    position:relative; width:54px;height:54px;border-radius:18px;
+    background:var(--white); border:3px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;cursor:pointer; box-shadow:0 4px 0 var(--line); flex:0 0 auto;
+  }
+  .home-btn:active{ transform:translateY(3px); box-shadow:none; }
+  .dots{ display:flex; gap:12px; }
+  .dot{
+    width:54px;height:54px;border-radius:18px; background:var(--white); border:3px solid var(--line);
+    display:flex;align-items:center;justify-content:center; font-size:26px; cursor:pointer; position:relative;
+    box-shadow:0 4px 0 var(--line); transition:transform .15s ease;
+  }
+  .dot.active{ border-color:var(--ink); transform:translateY(-3px); }
+  .dot.done{ background:var(--good-soft); border-color:var(--good); }
+  .dot svg{ width:32px; height:32px; display:block; }
+  .dot.done::after{
+    content:"✓"; position:absolute; top:-9px; right:-9px; width:24px;height:24px;border-radius:50%;
+    background:var(--good); color:#fff; font-size:15px; font-weight:900;
+    display:flex;align-items:center;justify-content:center; border:2px solid var(--white);
+  }
+
+  /* ---------- Generic screen ---------- */
+  .screen{ flex:1; display:none; flex-direction:column; align-items:center; animation: fadeIn .35s ease; }
+  .screen.show{ display:flex; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  h1.title{
+    font-family:'Jua', sans-serif; font-size:clamp(26px, 4vw, 40px);
+    text-align:center; margin: 4px 0 6px; letter-spacing:-0.5px;
+  }
+  p.subtitle{ font-size:clamp(16px,2.4vw,20px); color:var(--ink-soft); text-align:center; margin:0 0 22px; }
+
+  /* ---------- Menu screen ---------- */
+  .menu-grid{ width:100%; display:grid; grid-template-columns:repeat(2, 1fr); gap:26px; margin-top:10px; }
+  @media (max-width:640px){ .menu-grid{ grid-template-columns:1fr; } }
+  .sit-card{
+    border-radius:32px; border:none; padding:30px 20px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    box-shadow:0 8px 0 rgba(0,0,0,0.08); transition:transform .12s ease, box-shadow .12s ease; font-family:inherit;
+  }
+  .sit-card:active{ transform:translateY(6px); box-shadow:0 2px 0 rgba(0,0,0,0.08); }
+  .sit-card .emoji svg{ width:84px; height:84px; display:block; }
+  .sit-card .label{ font-family:'Jua', sans-serif; font-size:24px; color:var(--ink); }
+  .sit-card .num{ font-family:'Jua', sans-serif; font-size:15px; padding:5px 14px; border-radius:999px; background:rgba(255,255,255,0.7); }
+  .card-zip{ background:var(--c-zip-soft); } .card-zip .num{ color:var(--c-zip); }
+  .card-lid{ background:var(--c-lid-soft); } .card-lid .num{ color:var(--c-lid); }
+  .card-tray{ background:var(--c-tray-soft); } .card-tray .num{ color:var(--c-tray); }
+  .card-task{ background:var(--c-task-soft); } .card-task .num{ color:var(--c-task); }
+
+  /* ---------- Situation screen ---------- */
+  .situation-layout{
+    width:100%;
+    display:grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap:30px;
+    align-items:start;
+  }
+  @media (max-width:860px){ .situation-layout{ grid-template-columns:1fr; } }
+
+  .pic-col{ display:flex; flex-direction:column; align-items:center; }
+  .pic-wrap{
+    width:100%; border-radius:28px; overflow:hidden;
+    background:var(--white); border:3px solid var(--line);
+    box-shadow:0 10px 0 rgba(0,0,0,0.06); position:relative; aspect-ratio:16/11;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .pic-wrap svg{ width:70%; height:70%; }
+  .pic-caption{ text-align:center; font-family:'Jua', sans-serif; font-size:clamp(20px,2.6vw,26px); margin: 16px 0 6px; }
+
+  .answer-col{ display:flex; flex-direction:column; align-items:center; width:100%; }
+
+  .sentence-card{
+    width:100%; background:var(--white); border:3px solid var(--line); border-radius:26px;
+    padding:22px 20px; text-align:center; margin-bottom:22px; transition:background .25s ease, border-color .25s ease;
+  }
+  .sentence-card.filled{ background:#FFF1EA; border-color:var(--accent); }
+  .sentence-line{
+    font-family:'Jua', sans-serif; font-size:clamp(26px,4vw,38px); display:flex;
+    align-items:baseline; justify-content:center; gap:8px; flex-wrap:wrap; transform-origin:center;
+  }
+  .sentence-line.zoomPop{ animation: zoomPop .7s cubic-bezier(.2,.9,.3,1.3); }
+  @keyframes zoomPop{
+    0%{ transform:scale(1); }
+    45%{ transform:scale(1.5); }
+    75%{ transform:scale(1.12); }
+    100%{ transform:scale(1.18); }
+  }
+  .prefix{ color:var(--ink-soft); }
+  .blank{
+    color:var(--ink-soft); border-bottom:5px dashed var(--line); padding:0 6px 4px; min-width:170px; display:inline-block;
+  }
+  .blank.filled{ color:var(--accent); border-bottom:5px solid var(--accent); }
+
+  .choice-q{ font-size:clamp(16px,2vw,19px); color:var(--ink-soft); text-align:center; margin:0 0 16px; }
+  .choice-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; width:100%; }
+  @media (max-width:560px){ .choice-grid{ grid-template-columns:repeat(2,1fr); } }
+  .item-btn{
+    background:var(--white); border:4px solid var(--line); border-radius:24px; padding:16px 8px 12px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer;
+    box-shadow:0 6px 0 var(--line); transition:transform .1s ease, box-shadow .1s ease, border-color .15s ease, background .15s ease;
+  }
+  .item-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--line); }
+  .item-btn .icon svg{ width:52px; height:52px; display:block; }
+  .item-btn .name{ font-family:'Jua', sans-serif; font-size:14px; line-height:1.3; }
+  .item-btn.correct{ background:#FFF1EA; border-color:var(--accent); animation: pop .4s ease; }
+  .item-btn.wrong{ animation: shake .45s ease; border-color:var(--oops); background:#FFECEC; }
+  .item-btn[disabled]{ cursor:default; }
+  @keyframes pop{ 0%{transform:scale(1);} 40%{transform:scale(1.12);} 100%{transform:scale(1);} }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 20%{transform:translateX(-10px);} 40%{transform:translateX(10px);} 60%{transform:translateX(-8px);} 80%{transform:translateX(8px);} }
+
+  .btn-row{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:22px; }
+  .big-btn{
+    font-family:'Jua', sans-serif; font-size:20px; border:none; border-radius:20px; padding:16px 30px;
+    cursor:pointer; color:#fff; box-shadow:0 6px 0 rgba(0,0,0,0.15);
+    display:flex; align-items:center; gap:10px; transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .big-btn:active{ transform:translateY(5px); box-shadow:0 1px 0 rgba(0,0,0,0.15); }
+  .btn-speak{ background:#7C6FE0; }
+  .btn-next{ background:var(--good); }
+  .btn-next[disabled]{ background:#C9C4DD; cursor:not-allowed; }
+  .btn-restart{ background:#FFA245; }
+
+  /* ---------- Complete screen ---------- */
+  .complete-emoji{ font-size:96px; margin-bottom:6px; }
+  .complete-hero{
+    font-family:'Jua', sans-serif; font-size:clamp(30px,5vw,46px); color:var(--accent);
+    background:#FFF1EA; border:4px solid var(--accent); border-radius:28px; padding:22px 34px;
+    margin: 10px 0 26px; cursor:pointer; display:flex; align-items:center; gap:14px;
+  }
+  .complete-hero:active{ transform:translateY(3px); }
+  .complete-list{ display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; margin: 0 0 30px; width:100%; max-width:520px; }
+  @media (max-width:480px){ .complete-list{ grid-template-columns:1fr; } }
+  .complete-chip{
+    font-family:'Jua', sans-serif; background:var(--white); border:3px solid var(--good); color:var(--ink);
+    padding:14px 10px; border-radius:20px; font-size:16px; display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .complete-chip svg{ width:40px; height:40px; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="topbar">
+    <button class="home-btn" id="homeBtn" title="처음으로">🏠</button>
+    <div class="dots" id="dots"></div>
+  </div>
+
+  <!-- MENU SCREEN -->
+  <section class="screen show" id="screen-menu">
+    <h1 class="title">선생님, 도와주세요!</h1>
+    <p class="subtitle">그림을 눌러서 상황을 살펴보아요</p>
+    <div class="menu-grid" id="menuGrid"></div>
+  </section>
+
+  <!-- SITUATION SCREEN -->
+  <section class="screen" id="screen-situation">
+    <h1 class="title" id="sitTitle"></h1>
+
+    <div class="situation-layout">
+      <div class="pic-col">
+        <div class="pic-wrap" id="picWrap"></div>
+        <p class="pic-caption" id="picCaption"></p>
+      </div>
+
+      <div class="answer-col">
+        <div class="sentence-card" id="sentenceCard">
+          <div class="sentence-line" id="sentenceLine">
+            <span class="prefix">선생님,</span><span class="blank" id="blankWord">＿＿＿＿＿＿</span>
+          </div>
+        </div>
+
+        <p class="choice-q">이럴 때 뭐라고 말해야 할까요? 그림을 눌러 보아요.</p>
+        <div class="choice-grid" id="choiceGrid"></div>
+
+        <div class="btn-row">
+          <button class="big-btn btn-speak" id="speakAgainBtn" style="display:none;">🔊 다시 듣기</button>
+          <button class="big-btn btn-next" id="nextSitBtn" disabled>다음 →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPLETE SCREEN -->
+  <section class="screen" id="screen-complete">
+    <div class="complete-emoji">🎉</div>
+    <h1 class="title">잘 배웠어요!</h1>
+    <p class="subtitle">이럴 때는 언제나 이렇게 말해요</p>
+    <button class="complete-hero" id="heroSpeak">🔊 선생님, 도와주세요!</button>
+    <div class="complete-list" id="completeList"></div>
+    <button class="big-btn btn-restart" id="restartBtn">🔁 처음부터 다시하기</button>
+  </section>
+</div>
+
+<script>
+/* ================= 그림 아이콘 (SVG) ================= */
+// 얼굴+상체가 보이는 사람이 손을 번쩍 든 모습 (도움 요청 - 정답 아이콘)
+const HELP_ICON = `
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <path d="M68 58 Q81 50 85 34 Q87 25 87 20" fill="none" stroke="#FF8552" stroke-width="18" stroke-linecap="round" opacity=".28"/>
+  <path d="M68 58 Q81 50 85 34 Q87 25 87 20" fill="none" stroke="#3A3358" stroke-width="12" stroke-linecap="round"/>
+  <path d="M68 58 Q81 50 85 34 Q87 25 87 20" fill="none" stroke="#FF8552" stroke-width="8" stroke-linecap="round"/>
+  <path d="M32 58 Q23 64 23 76 Q23 82 25 86" fill="none" stroke="#3A3358" stroke-width="11" stroke-linecap="round"/>
+  <path d="M32 58 Q23 64 23 76 Q23 82 25 86" fill="none" stroke="#FFDBB5" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="25" cy="87" r="5.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.5"/>
+  <path d="M30 98 L30 68 Q30 52 50 52 Q70 52 70 68 L70 98 Z" fill="#7C6FE0" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="50" cy="30" r="15" fill="#FFDBB5" stroke="#3A3358" stroke-width="3"/>
+  <path d="M35 26 Q50 10 65 26 Q65 16 50 14 Q35 16 35 26 Z" fill="#6B5344" stroke="#3A3358" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="45" cy="31" r="1.8" fill="#3A3358"/>
+  <circle cx="55" cy="31" r="1.8" fill="#3A3358"/>
+  <path d="M45 37 Q50 40 55 37" fill="none" stroke="#3A3358" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="87" cy="17" rx="11" ry="10" fill="#FFDBB5" stroke="#3A3358" stroke-width="3"/>
+  <rect x="84.5" y="0" width="5" height="14" rx="2.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.2" transform="rotate(-32 87 12)"/>
+  <rect x="84.5" y="-2" width="5" height="16" rx="2.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.2" transform="rotate(-15 87 12)"/>
+  <rect x="84.5" y="-3" width="5" height="17" rx="2.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.2"/>
+  <rect x="84.5" y="-2" width="5" height="16" rx="2.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.2" transform="rotate(15 87 12)"/>
+  <rect x="84.5" y="0" width="5" height="14" rx="2.5" fill="#FFDBB5" stroke="#3A3358" stroke-width="2.2" transform="rotate(32 87 12)"/>
+</svg>`;
+
+// 필요한 물건 3종 (이전 활동에서 배운 말 — 오답 보기로 재사용)
+const OTHER_ICONS = {
+  moolt: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="12" y="32" width="76" height="46" rx="16" fill="#3AB6A8" stroke="#3A3358" stroke-width="3"/>
+    <path d="M50 78 L88 78 Q88 78 88 62 L88 48 Z" fill="#FF9C86" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M26 32 C26 18 34 12 42 14 C48 8 60 10 60 20 C68 18 72 26 66 32 Z" fill="#FFFFFF" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="30" cy="55" r="3" fill="#FFFFFF" opacity=".8"/>
+    <circle cx="40" cy="63" r="3" fill="#FFFFFF" opacity=".8"/>
+    <circle cx="30" cy="70" r="3" fill="#FFFFFF" opacity=".8"/>
+  </svg>`,
+  water: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="34" width="20" height="14" rx="4" fill="#4AA9FF" stroke="#3A3358" stroke-width="3"/>
+    <path d="M15 46 Q13 46 13 52 L13 82 Q13 88 20 88 L28 88 Q35 88 35 82 L35 52 Q35 46 33 46 Z" fill="#CDEBFF" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="15" y="66" width="20" height="20" rx="2" fill="#4AA9FF" opacity=".55"/>
+    <path d="M58 50 L82 50 L78 88 Q78 90 76 90 L64 90 Q62 90 62 88 Z" fill="#FFFFFF" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M62.5 65 L77.5 65 L75 88 Q75 89.5 73.5 89.5 L66.5 89.5 Q65 89.5 65 88 Z" fill="#4AA9FF"/>
+    <line x1="66" y1="58" x2="63.5" y2="80" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+  </svg>`,
+  bab: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 52 Q18 84 50 84 Q82 84 82 52 Z" fill="#C9BFEA" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="42" y="84" width="16" height="6" rx="3" fill="#B9AEDD" stroke="#3A3358" stroke-width="2"/>
+    <ellipse cx="50" cy="52" rx="32" ry="10" fill="#B9AEDD" stroke="#3A3358" stroke-width="3"/>
+    <path d="M22 48 Q50 66 78 48 Q78 30 50 30 Q22 30 22 48 Z" fill="#FFF8EC" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <g fill="#D8B98C"><circle cx="38" cy="40" r="1.8"/><circle cx="50" cy="36" r="1.8"/><circle cx="62" cy="40" r="1.8"/><circle cx="44" cy="46" r="1.8"/><circle cx="57" cy="46" r="1.8"/></g>
+  </svg>`
+};
+
+// 상황 그림 4종
+const SIT_ICONS = {
+  zip: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M35 16 L22 26 L28 38 L34 34 L34 90 Q34 94 38 94 L62 94 Q66 94 66 90 L66 34 L72 38 L78 26 L65 16 Q58 22 50 22 Q42 22 35 16 Z" fill="#3AB6A8" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M42 22 L50 32 L58 22" fill="none" stroke="#3A3358" stroke-width="2.5" stroke-linejoin="round"/>
+    <line x1="50" y1="32" x2="50" y2="92" stroke="#2E8F85" stroke-width="2" stroke-dasharray="3 4"/>
+    <circle cx="50" cy="42" r="3.6" fill="#FFFFFF" stroke="#3A3358" stroke-width="2"/>
+    <circle cx="50" cy="56" r="3.6" fill="#FFFFFF" stroke="#3A3358" stroke-width="2"/>
+    <circle cx="49" cy="70" r="3.6" fill="#FFFFFF" stroke="#3A3358" stroke-width="2"/>
+    <circle cx="56" cy="82" r="3.6" fill="#FFFFFF" stroke="#3A3358" stroke-width="2" opacity=".6"/>
+    <path d="M50 84 Q54 84 56 82" fill="none" stroke="#3A3358" stroke-width="1.6" stroke-dasharray="1.5 2.5"/>
+    <circle cx="80" cy="70" r="12" fill="#FF8552" stroke="#3A3358" stroke-width="2.5"/>
+    <text x="80" y="75" font-family="Jua, sans-serif" font-size="16" fill="#fff" text-anchor="middle">?</text>
+  </svg>`,
+  lid: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <path d="M30 40 Q26 40 26 48 L26 82 Q26 90 36 90 L62 90 Q72 90 72 82 L72 48 Q72 40 68 40 Z" fill="#CDEBFF" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="33" y="18" width="30" height="18" rx="5" fill="#4AA9FF" stroke="#3A3358" stroke-width="3" transform="rotate(13 48 27)"/>
+    <path d="M78 26 L86 20 M82 34 L91 33" stroke="#3A3358" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="86" cy="52" r="3.5" fill="#4AA9FF" opacity=".55"/>
+    <circle cx="80" cy="60" r="10" fill="#FF8552" stroke="#3A3358" stroke-width="2.5"/>
+    <text x="80" y="65" font-family="Jua, sans-serif" font-size="14" fill="#fff" text-anchor="middle">!</text>
+  </svg>`,
+  tray: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="18" width="90" height="66" rx="10" fill="#9C88FF" stroke="#3A3358" stroke-width="3"/>
+    <rect x="11" y="24" width="27" height="54" rx="6" fill="#FFF8EC" stroke="#3A3358" stroke-width="2.5"/>
+    <g fill="#D8B98C"><circle cx="20" cy="38" r="1.6"/><circle cx="27" cy="34" r="1.6"/><circle cx="32" cy="40" r="1.6"/><circle cx="22" cy="46" r="1.6"/><circle cx="30" cy="48" r="1.6"/></g>
+    <circle cx="70" cy="40" r="17" fill="#FFE8D0" stroke="#3A3358" stroke-width="2.5"/>
+    <path d="M58 40 Q64 36 70 40 Q76 44 82 40" fill="none" stroke="#E0A868" stroke-width="2" stroke-linecap="round"/>
+    <path d="M60 45 Q65 42 70 45 Q75 48 80 45" fill="none" stroke="#E0A868" stroke-width="2" stroke-linecap="round"/>
+    <rect x="43" y="61" width="15" height="17" rx="4" fill="#FFD966" stroke="#3A3358" stroke-width="2.2"/>
+    <rect x="61" y="61" width="15" height="17" rx="4" fill="#FF9C86" stroke="#3A3358" stroke-width="2.2"/>
+    <rect x="79" y="61" width="13" height="17" rx="4" fill="#8FD9A8" stroke="#3A3358" stroke-width="2.2"/>
+    <path d="M8 14 L14 4 M92 14 L86 4" stroke="#3A3358" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="50" cy="10" r="10" fill="#FF8552" stroke="#3A3358" stroke-width="2.5"/>
+    <text x="50" y="15" font-family="Jua, sans-serif" font-size="14" fill="#fff" text-anchor="middle">!</text>
+  </svg>`,
+  task: `
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="66" width="72" height="8" rx="3" fill="#D8B98C" stroke="#3A3358" stroke-width="3"/>
+    <rect x="20" y="74" width="6" height="16" fill="#D8B98C" stroke="#3A3358" stroke-width="2.5"/>
+    <rect x="74" y="74" width="6" height="16" fill="#D8B98C" stroke="#3A3358" stroke-width="2.5"/>
+    <rect x="36" y="54" width="26" height="17" rx="2.5" fill="#FFFFFF" stroke="#3A3358" stroke-width="2.5"/>
+    <line x1="40" y1="59" x2="58" y2="59" stroke="#E7E1F5" stroke-width="2"/>
+    <line x1="40" y1="64" x2="52" y2="64" stroke="#E7E1F5" stroke-width="2"/>
+    <path d="M32 66 Q32 42 50 42 Q68 42 68 66 Z" fill="#FF9C4A" stroke="#3A3358" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M34 58 Q29 63 35 67" fill="none" stroke="#3A3358" stroke-width="3" stroke-linecap="round"/>
+    <path d="M66 58 Q71 63 65 67" fill="none" stroke="#3A3358" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="50" cy="27" r="14" fill="#FFDBB5" stroke="#3A3358" stroke-width="3"/>
+    <path d="M36 23 Q50 8 64 23 Q64 15 50 13 Q36 15 36 23 Z" fill="#6B5344" stroke="#3A3358" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="45" cy="28" r="1.7" fill="#3A3358"/>
+    <circle cx="55" cy="28" r="1.7" fill="#3A3358"/>
+    <path d="M45 34 Q50 31 55 34" fill="none" stroke="#3A3358" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="80" cy="20" r="13" fill="#FF8552" stroke="#3A3358" stroke-width="2.5"/>
+    <text x="80" y="26" font-family="Jua, sans-serif" font-size="18" fill="#fff" text-anchor="middle">?</text>
+  </svg>`
+};
+
+/* ================= 데이터 ================= */
+const situations = [
+  {
+    id:'zip',
+    label:'옷을 못 잠가요',
+    cardClass:'card-zip',
+    caption:'지퍼나 벨크로를 혼자 못 잠그겠어요.'
+  },
+  {
+    id:'lid',
+    label:'뚜껑이 안 열려요',
+    cardClass:'card-lid',
+    caption:'물통 뚜껑이 꽉 닫혀서 안 열려요.'
+  },
+  {
+    id:'tray',
+    label:'식판을 못 옮겨요',
+    cardClass:'card-tray',
+    caption:'급식판이 무거워서 혼자 옮기기 힘들어요.'
+  },
+  {
+    id:'task',
+    label:'과제가 어려워요',
+    cardClass:'card-task',
+    caption:'수업 시간 활동이 너무 어려워요.'
+  }
+];
+
+const CHOICES_BASE = [
+  { id:'help',  label:'도와주세요!',   icon:HELP_ICON },
+  { id:'water', label:'물 주세요.',    icon:OTHER_ICONS.water },
+  { id:'bab',   label:'밥 주세요.',    icon:OTHER_ICONS.bab },
+  { id:'moolt', label:'물티슈 주세요.',icon:OTHER_ICONS.moolt }
+];
+
+function shuffled(arr){
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+let currentIndex = 0;
+let doneSet = new Set();
+
+/* ================= 요소 ================= */
+const dotsEl = document.getElementById('dots');
+const menuGrid = document.getElementById('menuGrid');
+const homeBtn = document.getElementById('homeBtn');
+
+const screens = {
+  menu: document.getElementById('screen-menu'),
+  situation: document.getElementById('screen-situation'),
+  complete: document.getElementById('screen-complete')
+};
+
+function showScreen(name){
+  Object.values(screens).forEach(s=>s.classList.remove('show'));
+  screens[name].classList.add('show');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ================= 상단 진행 점 ================= */
+function renderDots(){
+  dotsEl.innerHTML = '';
+  situations.forEach((s, i)=>{
+    const d = document.createElement('div');
+    d.className = 'dot' + (doneSet.has(s.id) ? ' done':'') + (i===currentIndex && screens.situation.classList.contains('show') ? ' active':'');
+    d.innerHTML = SIT_ICONS[s.id];
+    d.title = s.label;
+    d.addEventListener('click', ()=>{ openSituation(i); });
+    dotsEl.appendChild(d);
+  });
+}
+
+homeBtn.addEventListener('click', ()=>{
+  currentIndex = -1;
+  renderDots();
+  showScreen('menu');
+});
+
+/* ================= 메뉴 화면 ================= */
+function renderMenu(){
+  menuGrid.innerHTML = '';
+  situations.forEach((s,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'sit-card ' + s.cardClass;
+    btn.innerHTML = `
+      <div class="num">${i+1}</div>
+      <div class="emoji">${SIT_ICONS[s.id]}</div>
+      <div class="label">${s.label}</div>
+    `;
+    btn.addEventListener('click', ()=> openSituation(i));
+    menuGrid.appendChild(btn);
+  });
+}
+
+/* ================= 상황 화면 ================= */
+const sitTitle = document.getElementById('sitTitle');
+const picWrap = document.getElementById('picWrap');
+const picCaption = document.getElementById('picCaption');
+const sentenceCard = document.getElementById('sentenceCard');
+const sentenceLine = document.getElementById('sentenceLine');
+const blankWord = document.getElementById('blankWord');
+const choiceGrid = document.getElementById('choiceGrid');
+const speakAgainBtn = document.getElementById('speakAgainBtn');
+const nextSitBtn = document.getElementById('nextSitBtn');
+
+const FULL_SENTENCE = '선생님, 도와주세요!';
+
+/* 기기에 설치된 한국어 음성 중 더 자연스럽게 들리는 음성을 우선 선택 */
+let bestKoreanVoice = null;
+function pickBestKoreanVoice(){
+  const voices = window.speechSynthesis.getVoices();
+  const korean = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ko'));
+  if (korean.length === 0) return null;
+  const preferredNames = ['Yuna','유나','Sora','소라','SunHi','선희','Heami','해미','지민','Jimin','Google 한국의'];
+  for (const name of preferredNames){
+    const match = korean.find(v => v.name.includes(name));
+    if (match) return match;
+  }
+  const female = korean.find(v => /female|여성/i.test(v.name));
+  if (female) return female;
+  return korean[0];
+}
+function refreshVoice(){ bestKoreanVoice = pickBestKoreanVoice(); }
+refreshVoice();
+if ('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = refreshVoice;
+}
+
+function speak(text){
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    if (bestKoreanVoice) u.voice = bestKoreanVoice;
+    u.rate = 0.85;
+    u.pitch = 1.15;
+    window.speechSynthesis.speak(u);
+  }catch(e){ /* speech not supported */ }
+}
+
+function openSituation(i){
+  currentIndex = i;
+  const s = situations[i];
+
+  sitTitle.textContent = s.label;
+  picWrap.innerHTML = SIT_ICONS[s.id];
+  picCaption.textContent = s.caption;
+
+  sentenceCard.classList.remove('filled');
+  sentenceLine.classList.remove('zoomPop');
+  blankWord.textContent = '＿＿＿＿＿＿';
+  blankWord.classList.remove('filled');
+  speakAgainBtn.style.display = 'none';
+  nextSitBtn.disabled = true;
+
+  choiceGrid.innerHTML = '';
+  shuffled(CHOICES_BASE).forEach(it=>{
+    const b = document.createElement('button');
+    b.className = 'item-btn';
+    b.innerHTML = `<div class="icon">${it.icon}</div><div class="name">${it.label}</div>`;
+    b.addEventListener('click', ()=> handleChoice(b, it));
+    choiceGrid.appendChild(b);
+  });
+
+  renderDots();
+  showScreen('situation');
+}
+
+function handleChoice(btn, item){
+  if (btn.disabled) return;
+  if (item.id === 'help'){
+    [...choiceGrid.children].forEach(c=>c.disabled = true);
+    btn.classList.add('correct');
+
+    blankWord.textContent = '도와주세요!';
+    blankWord.classList.add('filled');
+    sentenceCard.classList.add('filled');
+
+    sentenceLine.classList.remove('zoomPop');
+    void sentenceLine.offsetWidth;
+    sentenceLine.classList.add('zoomPop');
+
+    speakAgainBtn.style.display = 'inline-flex';
+    nextSitBtn.disabled = false;
+
+    doneSet.add(situations[currentIndex].id);
+    renderDots();
+    setTimeout(()=> speak(FULL_SENTENCE), 350);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(()=> btn.classList.remove('wrong'), 500);
+  }
+}
+
+speakAgainBtn.addEventListener('click', ()=>{
+  speak(FULL_SENTENCE);
+});
+
+nextSitBtn.addEventListener('click', ()=>{
+  if (nextSitBtn.disabled) return;
+  const next = currentIndex + 1;
+  if (next < situations.length){
+    openSituation(next);
+  } else {
+    openComplete();
+  }
+});
+
+/* ================= 완료 화면 ================= */
+const completeList = document.getElementById('completeList');
+const restartBtn = document.getElementById('restartBtn');
+const heroSpeak = document.getElementById('heroSpeak');
+
+heroSpeak.addEventListener('click', ()=> speak(FULL_SENTENCE));
+
+function openComplete(){
+  completeList.innerHTML = '';
+  situations.forEach(s=>{
+    const chip = document.createElement('div');
+    chip.className = 'complete-chip';
+    chip.innerHTML = `${SIT_ICONS[s.id]}<span>${s.label}</span>`;
+    completeList.appendChild(chip);
+  });
+  renderDots();
+  showScreen('complete');
+}
+
+restartBtn.addEventListener('click', ()=>{
+  doneSet.clear();
+  currentIndex = -1;
+  renderDots();
+  showScreen('menu');
+});
+
+/* ================= 초기화 ================= */
+renderMenu();
+renderDots();
+</script>
+</body>
+</html>
